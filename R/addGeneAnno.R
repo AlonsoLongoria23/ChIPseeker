@@ -15,7 +15,7 @@ getGeneAnno <- function(annoDb, geneID, type, columns){
     annoDb <- eval(parse(text=annoDb))
   
     if (type == "Entrez Gene ID") {
-        if (annoDb$packageName == "org.Dpulex.eg.db") {
+        if (annoDb$packageName %in% c("org.Dpulex.eg.db", "org.Tthymallus.eg.db")) {
             kt <- "GID" 
         } else {
             kt <- "ENTREZID"   
@@ -46,6 +46,25 @@ getGeneAnno <- function(annoDb, geneID, type, columns){
         }
 
         return(ann)
+            
+       } else if (annoDb$packageName == "org.Tthymallus.eg.db") {
+        Tthymallus_kk <- AnnotationDbi::mapIds(annoDb,
+                                               keys=kk,
+                                               keytype = "SYMBOL",
+                                               column = "GID")
+        
+        ann <- tryCatch(
+            suppressWarnings(AnnotationDbi::select(annoDb,
+                                                   keys=Tthymallus_kk,
+                                                   keytype=kt,
+                                                   columns=columns)),
+            error = function(e) NULL)
+        if (is.null(ann)) {
+            warning("ID type not matched, gene annotation will not be added...")
+            return(NA)
+        }
+
+        return(ann)         
         
     } else {
         i <- which(!is.na(kk))
