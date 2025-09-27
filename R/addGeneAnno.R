@@ -47,7 +47,7 @@ getGeneAnno <- function(annoDb, geneID, type, columns){
 
         return(ann)
             
-      else if (annoDb$packageName == "org.Tthymallus.eg.db") {
+     } else if (annoDb$packageName == "org.Tthymallus.eg.db") {
         # Input from TxDb is GID; we want SYMBOL + GENENAME
         Tthymallus_ann <- tryCatch(
             suppressWarnings(AnnotationDbi::select(
