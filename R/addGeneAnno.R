@@ -47,24 +47,25 @@ getGeneAnno <- function(annoDb, geneID, type, columns){
 
         return(ann)
             
-       } else if (annoDb$packageName == "org.Tthymallus.eg.db") {
-        Tthymallus_kk <- AnnotationDbi::mapIds(annoDb,
-                                               keys=kk,
-                                               keytype = "SYMBOL",
-                                               column = "GID")
-        
-        ann <- tryCatch(
-            suppressWarnings(AnnotationDbi::select(annoDb,
-                                                   keys=Tthymallus_kk,
-                                                   keytype=kt,
-                                                   columns=columns)),
-            error = function(e) NULL)
-        if (is.null(ann)) {
-            warning("ID type not matched, gene annotation will not be added...")
-            return(NA)
-        }
+      else if (annoDb$packageName == "org.Tthymallus.eg.db") {
+        # Input from TxDb is GID; we want SYMBOL + GENENAME
+        Tthymallus_ann <- tryCatch(
+            suppressWarnings(AnnotationDbi::select(
+            annoDb,
+            keys = kk,
+            keytype = "GID",
+            columns = columns
+        )),
+        error = function(e) NULL
+    )
 
-        return(ann)         
+    if (is.null(Tthymallus_ann)) {
+        warning("ID type not matched, gene annotation will not be added...")
+        return(NA)
+    }
+
+    return(Tthymallus_ann)
+}        
         
     } else {
         i <- which(!is.na(kk))
