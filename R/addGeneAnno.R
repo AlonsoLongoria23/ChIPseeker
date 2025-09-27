@@ -65,7 +65,7 @@ getGeneAnno <- function(annoDb, geneID, type, columns){
     }
 
     return(Tthymallus_ann)
-}        
+       
         
     } else {
         i <- which(!is.na(kk))
