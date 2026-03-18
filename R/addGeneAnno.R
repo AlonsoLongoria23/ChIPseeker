@@ -12,97 +12,99 @@
 getGeneAnno <- function(annoDb, geneID, type, columns){
     kk <- unlist(geneID)
     require(annoDb, character.only = TRUE)
-    annoDb <- eval(parse(text=annoDb))
+    annoDb <- eval(parse(text = annoDb))
   
     if (type == "Entrez Gene ID") {
-        if (annoDb$packageName %in% c("org.Dpulex.eg.db", "org.Tthymallus.eg.db")) {
-            kt <- "GID" 
+        if (annoDb$packageName %in% c("org.Dpulex.eg.db", "org.Tthymallus.eg.db", "org.Tarcticus.eg.db")) {
+            kt <- "GID"
         } else {
-            kt <- "ENTREZID"   
+            kt <- "ENTREZID"
         }
-    } else if (type =="Ensembl gene ID" || type == "Ensembl Gene ID") {
+    } else if (type == "Ensembl gene ID" || type == "Ensembl Gene ID") {
         kt <- "ENSEMBL"
     } else {
         message("geneID type is not supported...\tPlease report it to developer...\n")
         return(NA)
     }
-  
-    
+
     if (annoDb$packageName == "org.Dpulex.eg.db") {
-        Dpulex_kk <- AnnotationDbi::mapIds(annoDb,
-                                           keys=kk,
-                                           keytype = "SYMBOL",
-                                           column = "GID")
-        
+        Dpulex_kk <- AnnotationDbi::mapIds(
+            annoDb,
+            keys = kk,
+            keytype = "SYMBOL",
+            column = "GID"
+        )
+
         ann <- tryCatch(
-            suppressWarnings(AnnotationDbi::select(annoDb,
-                                                   keys=Dpulex_kk,
-                                                   keytype=kt,
-                                                   columns=columns)),
-            error = function(e) NULL)
+            suppressWarnings(AnnotationDbi::select(
+                annoDb,
+                keys = Dpulex_kk,
+                keytype = kt,
+                columns = columns
+            )),
+            error = function(e) NULL
+        )
+
         if (is.null(ann)) {
             warning("ID type not matched, gene annotation will not be added...")
             return(NA)
         }
 
         return(ann)
-            
-     } else if (annoDb$packageName == "org.Tthymallus.eg.db") {
-        # Input from TxDb is GID; we want SYMBOL + GENENAME
-        Tthymallus_ann <- tryCatch(
-            suppressWarnings(AnnotationDbi::select(
-            annoDb,
-            keys = kk,
-            keytype = "GID",
-            columns = columns
-        )),
-        error = function(e) NULL
-    )
 
-    if (is.null(Tthymallus_ann)) {
-        warning("ID type not matched, gene annotation will not be added...")
-        return(NA)
-    }
-
-    return(Tthymallus_ann)
-       
-        
-    } else {
-        i <- which(!is.na(kk))
-        kk <- gsub("\\.\\d+$", "", kk)
-        
+    } else if (annoDb$packageName %in% c("org.Tthymallus.eg.db", "org.Tarcticus.eg.db")) {
         ann <- tryCatch(
-            suppressWarnings(select(annoDb,
-                                    keys=unique(kk[i]),
-                                    keytype=kt,
-                                    columns=columns)),
-            error = function(e) NULL)
-        
+            suppressWarnings(AnnotationDbi::select(
+                annoDb,
+                keys = kk,
+                keytype = kt,
+                columns = columns
+            )),
+            error = function(e) NULL
+        )
+
         if (is.null(ann)) {
             warning("ID type not matched, gene annotation will not be added...")
             return(NA)
         }
-        idx <- getFirstHitIndex(ann[,kt])
-        ann <- ann[idx,]
-    
-        ## idx <- unlist(sapply(kk, function(x) which(x==ann[,kt])))
-        ## res <- matrix(NA, ncol=ncol(ann), nrow=length(kk)) %>% as.data.frame
-        ## colnames(res) <- colnames(ann)
-        ## res[i,] <- ann[idx,]
-        
+
+        return(ann)
+
+    } else {
+        i <- which(!is.na(kk))
+        kk <- gsub("\\.\\d+$", "", kk)
+
+        ann <- tryCatch(
+            suppressWarnings(select(
+                annoDb,
+                keys = unique(kk[i]),
+                keytype = kt,
+                columns = columns
+            )),
+            error = function(e) NULL
+        )
+
+        if (is.null(ann)) {
+            warning("ID type not matched, gene annotation will not be added...")
+            return(NA)
+        }
+
+        idx <- getFirstHitIndex(ann[, kt])
+        ann <- ann[idx, ]
+
         rownames(ann) <- ann[, kt]
-        res <- ann[as.character(kk),]
+        res <- ann[as.character(kk), ]
         return(res)
-  }
+    }
 }
 
 
 addGeneAnno <- function(peak.gr, annoDb, type, columns) {
-  geneAnno <- getGeneAnno(annoDb, peak.gr$geneId, type, columns)
-  if (! all(is.na(geneAnno))) {
-    for(cn in colnames(geneAnno)[-1]) {
-      mcols(peak.gr)[[cn]] <- geneAnno[, cn]
+    geneAnno <- getGeneAnno(annoDb, peak.gr$geneId, type, columns)
+    if (!all(is.na(geneAnno))) {
+        for (cn in colnames(geneAnno)[-1]) {
+            mcols(peak.gr)[[cn]] <- geneAnno[, cn]
+        }
     }
-  }
-  return(peak.gr)
+    return(peak.gr)
 }
