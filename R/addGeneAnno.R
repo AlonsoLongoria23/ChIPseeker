@@ -13,13 +13,16 @@ getGeneAnno <- function(annoDb, geneID, type, columns){
     kk <- unlist(geneID)
     require(annoDb, character.only = TRUE)
     annoDb <- eval(parse(text = annoDb))
-  
-    if (type == "Entrez Gene ID") {
-        if (annoDb$packageName %in% c("org.Dpulex.eg.db", "org.Tthymallus.eg.db", "org.Tarcticus.eg.db")) {
-            kt <- "GID"
-        } else {
-            kt <- "ENTREZID"
-        }
+
+    ## Custom OrgDb packages may use organism-specific gene IDs (e.g. GID)
+    ## that do not map cleanly onto ChIPseeker's inferred `type`.
+    ## For these packages, use the package-native keytype directly.
+    if (annoDb$packageName %in% c("org.Dpulex.eg.db",
+                                  "org.Tthymallus.eg.db",
+                                  "org.Tarcticus.eg.db")) {
+        kt <- "GID"
+    } else if (type == "Entrez Gene ID") {
+        kt <- "ENTREZID"
     } else if (type == "Ensembl gene ID" || type == "Ensembl Gene ID") {
         kt <- "ENSEMBL"
     } else {
